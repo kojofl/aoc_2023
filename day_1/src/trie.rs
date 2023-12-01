@@ -1,5 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
+#[macro_export]
+macro_rules! trie {
+    ($($x:expr),*) => {
+        Trie::new(&vec![$($x),*])
+    };
+}
+
 #[derive(Debug, Clone)]
 pub struct Trie {
     pub n: Vec<TrieNode>,
@@ -29,7 +36,12 @@ impl Trie {
         Self { n: v }
     }
 
-    pub fn try_find(&self, hey_stack: &str) -> Option<u8> {
+    pub fn try_find(&self, hey_stack: &str) -> Option<u32> {
+        if let Some(c) = hey_stack.chars().next() {
+            if c.is_numeric() {
+                return Some(c.to_digit(10).unwrap());
+            }
+        }
         // there are no numbers with less than three chars
         if hey_stack.len() < 3 {
             return None;
@@ -50,12 +62,12 @@ pub struct TrieNode {
 }
 
 impl TrieNode {
-    fn match_trie_node(&self, b: &[u8]) -> Option<u8> {
+    fn match_trie_node(&self, b: &[u8]) -> Option<u32> {
         let x = self.n.borrow();
         if let Some(n) = x.iter().find(|e| e.is_b(b[0])) {
             match n {
                 NodeType::Node(n) => n.match_trie_node(&b[1..]),
-                NodeType::Fin { v: _, p } => Some(*p),
+                NodeType::Fin { v: _, p } => Some(*p as u32),
             }
         } else {
             None
