@@ -37,7 +37,7 @@ fn main() {
             acc
         }
     });
-    println!("The calibration falues add up to: {}", sum)
+    println!("The calibration values add up to: {}", sum)
 }
 
 #[test]
