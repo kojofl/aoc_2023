@@ -1,3 +1,4 @@
+use cube::Game;
 use std::io::{BufRead, BufReader};
 
 fn main() {
@@ -22,26 +23,7 @@ fn main() {
             }
         })
         .sum();
-    println!("{sum}")
-}
-
-struct Game {
-    red: u32,
-    green: u32,
-    blue: u32,
-}
-
-impl Game {
-    fn is_plausible(&self, input: &str) -> bool {
-        match input.trim().split_once(' ').unwrap() {
-            (n, "red") => n.parse::<u32>().expect("Valid number") <= self.red,
-            (n, "blue") => n.parse::<u32>().expect("Valid number") <= self.blue,
-            (n, "green") => n.parse::<u32>().expect("Valid number") <= self.green,
-            _ => {
-                panic!("Unknown color");
-            }
-        }
-    }
+    println!("{sum}");
 }
 
 fn line_possible(line: &str, g: &Game) -> bool {
