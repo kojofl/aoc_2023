@@ -1,11 +1,14 @@
 use std::io::{BufRead, BufReader};
 
+/// The SearchResult describes the result given by searching a slice for a number.
+/// Success indicates a number was found that is adjacent to a symbol if a gear was found
+/// it's position is returned as well.
 #[derive(Debug, Clone)]
 enum SearchResult {
     Success {
         number: u32,
         next_index: usize,
-        symbol: Option<(usize, usize)>,
+        gear: Option<(usize, usize)>,
     },
     Failure {
         next_index: usize,
@@ -13,8 +16,17 @@ enum SearchResult {
     EOL,
 }
 
-struct SymbolMap {
+/// The GearMap tracks all gears.
+struct GearMap {
     pub inner: Vec<Vec<Option<Gear>>>,
+}
+
+impl GearMap {
+    pub fn new(line_count: usize, line_len: usize) -> Self {
+        Self {
+            inner: vec![vec![None; line_len]; line_count],
+        }
+    }
 }
 
 /// A Gear can counts the numbers it is adjacent with if there are more than two adjacent
@@ -23,6 +35,23 @@ struct SymbolMap {
 struct Gear {
     pub numbers: [Option<u32>; 2],
     pub poisioned: bool,
+}
+
+impl Gear {
+    pub fn new(number: u32) -> Self {
+        Self {
+            numbers: [Some(number), None],
+            poisioned: false,
+        }
+    }
+
+    pub fn add_number(&mut self, number: u32) {
+        if self.numbers[1].is_none() {
+            self.numbers[1] = Some(number)
+        } else {
+            self.poisioned = true
+        }
+    }
 }
 
 fn main() {
@@ -36,32 +65,24 @@ fn main() {
         })
         .collect();
     let mut sum = 0;
-    let mut sym_map = SymbolMap {
-        inner: vec![vec![None; lines[0].len()]; lines.len()],
-    };
+    let mut sym_map = GearMap::new(lines.len(), lines[0].len());
     for i in 0..lines.len() {
         let mut j = 0;
+        // Look for numbers in line until EOL reached.
         loop {
             match search_number(&lines, i, j) {
                 SearchResult::Success {
                     number,
                     next_index,
-                    symbol,
+                    gear: symbol,
                 } => {
                     sum += number;
                     j = next_index;
                     if let Some(s) = symbol {
                         if let Some(sym) = &mut sym_map.inner[s.0][s.1] {
-                            if sym.numbers[1].is_some() {
-                                sym.poisioned = true;
-                            } else {
-                                sym.numbers[1] = Some(number);
-                            }
+                            sym.add_number(number)
                         } else {
-                            sym_map.inner[s.0][s.1] = Some(Gear {
-                                numbers: [Some(number), None],
-                                poisioned: false,
-                            });
+                            sym_map.inner[s.0][s.1] = Some(Gear::new(number))
                         }
                     }
                 }
@@ -95,6 +116,7 @@ enum Direction {
     Left,
     Right,
 }
+
 /// Finds next number in line and checks if it is adjacent to any symbol
 /// and returns the appropriate SearchResult.
 fn search_number(data: &[Vec<u8>], i: usize, j: usize) -> SearchResult {
@@ -178,6 +200,7 @@ fn search_number(data: &[Vec<u8>], i: usize, j: usize) -> SearchResult {
             next_index: end_number,
         };
     }
+    // Convert askii number to u32
     let number = data[i][start_number..end_number]
         .iter()
         .rev()
@@ -189,7 +212,7 @@ fn search_number(data: &[Vec<u8>], i: usize, j: usize) -> SearchResult {
     SearchResult::Success {
         number,
         next_index: end_number,
-        symbol: screw_idx,
+        gear: screw_idx,
     }
 }
 
