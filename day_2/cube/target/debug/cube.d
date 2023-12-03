@@ -1,1 +1,0 @@
-C:\Users\Kojofl\Documents\rust_projects\advent\aoc_2023\cube\target\debug\cube.exe: C:\Users\Kojofl\Documents\rust_projects\advent\aoc_2023\cube\src\lib.rs C:\Users\Kojofl\Documents\rust_projects\advent\aoc_2023\cube\src\main.rs
