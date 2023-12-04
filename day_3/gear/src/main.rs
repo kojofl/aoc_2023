@@ -200,6 +200,7 @@ fn search_number(data: &[Vec<u8>], i: usize, j: usize) -> SearchResult {
             next_index: end_number,
         };
     }
+
     // Convert askii number to u32
     let number = data[i][start_number..end_number]
         .iter()
