@@ -33,12 +33,10 @@ impl From<String> for Card {
             panic!("Each card needs draws and winning numbers");
         };
         let pulls = pulls
-            .trim()
             .split_whitespace()
             .map(|c| c.parse::<u32>().expect("Valid numbers"))
             .collect();
         let winning = winning
-            .trim()
             .split_whitespace()
             .map(|c| c.parse::<u32>().expect("Valid numbers"))
             .collect();
