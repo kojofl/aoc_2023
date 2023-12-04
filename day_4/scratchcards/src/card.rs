@@ -1,13 +1,14 @@
+use std::collections::HashSet;
+
 #[derive(Debug, Clone)]
 pub struct Card {
-    pub pulls: Vec<u32>,
-    pub winning: Vec<u32>,
+    pub pulls: HashSet<u32>,
+    pub winning: HashSet<u32>,
     pub amount: u32,
 }
 
 impl Card {
-    pub fn new(mut pulls: Vec<u32>, winning: Vec<u32>) -> Self {
-        pulls.sort();
+    pub fn new(pulls: HashSet<u32>, winning: HashSet<u32>) -> Self {
         Self {
             pulls,
             winning,
@@ -15,24 +16,14 @@ impl Card {
         }
     }
     pub fn calc_winnings(&self) -> u32 {
-        self.winning.iter().fold(0, |acc, wn| {
-            if self.pulls.binary_search(&wn).is_err() {
-                return acc;
-            }
-            if acc == 0 {
-                1
-            } else {
-                acc * 2
-            }
-        })
+        let wins = self.winning.intersection(&self.pulls).count() as u32;
+        if wins == 0 {
+            return 0;
+        }
+        2_u32.pow(wins - 1)
     }
     pub fn calc_won_scratch(&self) -> u32 {
-        self.winning.iter().fold(0, |acc, wn| {
-            if self.pulls.binary_search(&wn).is_err() {
-                return acc;
-            }
-            acc + 1
-        })
+        self.winning.intersection(&self.pulls).count() as u32
     }
 }
 
