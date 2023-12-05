@@ -2,6 +2,8 @@ use std::collections::VecDeque;
 
 use crate::{Almanac, Mapping};
 
+type Range = (u64, u64);
+
 pub struct RangeAlmanac {
     pub states: [Vec<Range>; 8],
     pub translation: [Vec<Mapping>; 7],
@@ -22,53 +24,58 @@ impl From<Almanac> for RangeAlmanac {
 }
 
 impl RangeAlmanac {
-    pub fn map_data(&mut self) {
+    pub fn process_state(&mut self) {
         for i in 0..self.states.len() - 1 {
-            let mut list = VecDeque::new();
-            let mut list_2 = VecDeque::new();
-            let next: Vec<(u64, u64)> = self.states[i]
+            // All elements that are being matched.
+            let mut to_match = VecDeque::new();
+            // Elements that have not matched are stored here for the next rule.
+            let mut rest = VecDeque::new();
+            let next_state: Vec<(u64, u64)> = self.states[i]
                 .iter()
                 .flat_map(|s| {
-                    list.push_back(*s);
+                    to_match.push_back(*s);
                     let mut temp = Vec::new();
                     for rule in self.translation[i].iter().filter(|t| t.has_intersection(s)) {
-                        while let Some(el) = list.pop_front() {
+                        // Match all elements against rule
+                        while let Some(el) = to_match.pop_front() {
                             if !rule.has_intersection(&el) {
-                                list_2.push_back(el);
+                                rest.push_back(el);
                                 continue;
                             }
                             match intersect(el, *rule) {
                                 IntersectionResult::Consumed(c) => temp.push(c),
                                 IntersectionResult::Consumes(l, c, r) => {
                                     temp.push(c);
-                                    list_2.push_back(l);
-                                    list_2.push_back(r);
+                                    rest.push_back(l);
+                                    rest.push_back(r);
                                 }
                                 IntersectionResult::OverlapLeft(c, r) => {
                                     temp.push(c);
-                                    list_2.push_back(r);
+                                    rest.push_back(r);
                                 }
                                 IntersectionResult::OverlapRight(r, c) => {
                                     temp.push(c);
-                                    list_2.push_back(r);
+                                    rest.push_back(r);
                                 }
                             }
                         }
-                        std::mem::swap(&mut list, &mut list_2);
+                        std::mem::swap(&mut to_match, &mut rest);
                     }
-                    temp.extend(list.iter());
+                    // Elements that never matched propagate to the next state
+                    temp.extend(to_match.iter());
                     temp
                 })
                 .collect();
-            self.states[i + 1] = next
+            self.states[i + 1] = next_state
         }
     }
 }
 
-type Range = (u64, u64);
-
+// Result of matching a rule to an input
 pub enum IntersectionResult {
+    // new state
     Consumed(Range),
+    // left, new state, right
     Consumes(Range, Range, Range),
     // New state, rest
     OverlapLeft(Range, Range),
@@ -76,6 +83,9 @@ pub enum IntersectionResult {
     OverlapRight(Range, Range),
 }
 
+/// Calculates the IntersectionResult of a input with a matching rule.
+/// Importantly the result of this function are nonsensical if the rule
+/// does not match.
 pub fn intersect(input: Range, rule: Mapping) -> IntersectionResult {
     if input.0 >= rule.source.0 && input.1 <= rule.source.1 {
         IntersectionResult::Consumed((

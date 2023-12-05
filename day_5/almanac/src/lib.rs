@@ -55,7 +55,7 @@ impl Almanac {
         }
     }
 
-    pub fn map_data(&mut self) {
+    pub fn process_states(&mut self) {
         for i in 0..self.states.len() - 1 {
             let next: Vec<u64> = self.states[i]
                 .iter()
