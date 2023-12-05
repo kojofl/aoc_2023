@@ -4,6 +4,7 @@ fn main() {
     // Part 1:
     let mut almanac = Almanac::from_file("./input");
     almanac.process_states();
+    println!("{}", almanac.states.last().unwrap().iter().min().unwrap());
     // Part 2:
     let mut almac_range: RangeAlmanac = almanac.into();
     almac_range.process_state();
