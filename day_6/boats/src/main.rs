@@ -17,18 +17,13 @@ fn part_1(reader: impl BufRead) -> u32 {
         .skip(1)
         .map(|(t, d)| (t.parse::<u32>().unwrap(), d.parse::<u32>().unwrap()))
         .map(|(time, dist)| {
-            let mut wins = 0;
             for hold in 1..time - 1 {
                 let fin = hold * (time - hold);
                 if fin > dist {
-                    wins += 1;
-                } else {
-                    if wins > 0 {
-                        break;
-                    }
+                    return time - hold + 1 - hold;
                 }
             }
-            wins
+            0
         })
         .product()
 }
@@ -54,19 +49,13 @@ fn part_2(reader: impl BufRead) -> u64 {
                     .unwrap(),
             )
         })
-        .map(|(time, dist)| {
-            let mut wins = 0;
+        .fold(0, |acc, (time, dist)| {
             for hold in 1..time - 1 {
                 let fin = hold * (time - hold);
                 if fin > dist {
-                    wins += 1;
-                } else {
-                    if wins > 0 {
-                        break;
-                    }
+                    return time - hold + 1 - hold;
                 }
             }
-            wins
+            acc
         })
-        .product()
 }
