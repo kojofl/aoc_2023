@@ -6,7 +6,7 @@ fn main() {
     println!("{}", part_2(reader));
 }
 
-fn part_1(reader: impl BufRead) -> u32 {
+fn part_1(reader: impl BufRead) -> u64 {
     let mut lines = reader.lines();
     lines
         .next()
@@ -17,15 +17,17 @@ fn part_1(reader: impl BufRead) -> u32 {
         .skip(1)
         .map(|(t, d)| (t.parse::<u32>().unwrap(), d.parse::<u32>().unwrap()))
         .map(|(time, dist)| {
-            for hold in 1..time - 1 {
-                let fin = hold * (time - hold);
-                if fin > dist {
-                    return time - hold + 1 - hold;
-                }
-            }
-            0
+            let (x_1, x_2) = pq(-(time as f64), dist as f64);
+            x_2 - x_1
         })
         .product()
+}
+
+fn pq(p: f64, q: f64) -> (u64, u64) {
+    let x = -(p / 2.0);
+    let x_2 = (x + ((p / 2.0).powf(2.0) - q).sqrt()) as u64;
+    let x_1 = (x - ((p / 2.0).powf(2.0) - q).sqrt()) as u64;
+    (x_1, x_2)
 }
 
 fn part_2(reader: impl BufRead) -> u64 {
@@ -49,13 +51,8 @@ fn part_2(reader: impl BufRead) -> u64 {
                     .unwrap(),
             )
         })
-        .fold(0, |acc, (time, dist)| {
-            for hold in 1..time - 1 {
-                let fin = hold * (time - hold);
-                if fin > dist {
-                    return time - hold + 1 - hold;
-                }
-            }
-            acc
+        .fold(0, |_, (time, dist)| {
+            let (x_1, x_2) = pq(-(time as f64), dist as f64);
+            x_2 - x_1
         })
 }
