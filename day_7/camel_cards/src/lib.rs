@@ -49,14 +49,25 @@ pub enum Power {
 pub struct Hand {
     pub cards: [Card; 5],
     pub power: Power,
+    pub tie_pow: u64,
     pub bid: u64,
 }
 
 impl Hand {
     pub fn new(cards: &[Card; 5], bid: u64) -> Self {
         let mut count = [0; 13];
-        for card in cards {
-            count[card.as_value() as usize - 2] += 1;
+        let tie_pow = [
+            cards[4].as_value(),
+            cards[3].as_value(),
+            cards[2].as_value(),
+            cards[1].as_value(),
+            cards[0].as_value(),
+            0,
+            0,
+            0,
+        ];
+        for card in &tie_pow[..5] {
+            count[*card as usize - 2] += 1;
         }
         count.sort_by(|a, b| b.cmp(&a));
         let power = match &count[..2] {
@@ -71,6 +82,7 @@ impl Hand {
         Self {
             cards: *cards,
             power,
+            tie_pow: unsafe { *(&tie_pow as *const [u8; 8] as *const u64) },
             bid,
         }
     }
@@ -87,16 +99,7 @@ impl PartialOrd for Hand {
         let p_a = self.power as u8;
         let p_b = other.power as u8;
         match p_a.cmp(&p_b) {
-            Ordering::Equal => match self
-                .cards
-                .iter()
-                .zip(other.cards)
-                .map(|(a, b)| (a.as_value(), b.as_value()))
-                .find(|(a, b)| a != b)
-            {
-                Some((a, b)) => return Some(a.cmp(&b)),
-                None => return Some(Ordering::Equal),
-            },
+            Ordering::Equal => Some(self.tie_pow.cmp(&other.tie_pow)),
             o @ _ => Some(o),
         }
     }
