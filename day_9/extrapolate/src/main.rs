@@ -3,7 +3,7 @@ use std::io::{BufRead, BufReader};
 fn main() {
     let file = std::fs::File::open("input");
     let reader = BufReader::new(file.unwrap());
-    let number_rows = reader
+    let mut number_rows = reader
         .lines()
         .map(|l| {
             l.unwrap()
@@ -13,7 +13,12 @@ fn main() {
         })
         .collect::<Vec<Vec<i32>>>();
     let sum = number_rows.iter().fold(0, |acc, r| acc + extrapolate(r));
-    println!("{sum}")
+    println!("{sum}");
+    let sum = number_rows.iter_mut().fold(0, |acc, r| {
+        r.reverse();
+        acc + extrapolate(r)
+    });
+    println!("{sum}");
 }
 
 pub fn extrapolate(row: &[i32]) -> i32 {
