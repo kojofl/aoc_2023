@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 #[macro_export]
 macro_rules! trie {
     ($($x:expr),*) => {
-        Trie::new(&vec![$($x),*])
+        Trie::new(&[$($x),*])
     };
 }
 
