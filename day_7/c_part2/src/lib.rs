@@ -73,7 +73,7 @@ impl Hand {
                 _ => count[*card as usize - 2] += 1,
             }
         }
-        count.sort_by(|a, b| b.cmp(&a));
+        count.sort_by(|a, b| b.cmp(a));
         count[0] += jokers;
         let power = match &count[..2] {
             [5, ..] => Power::Five,
@@ -105,7 +105,7 @@ impl PartialOrd for Hand {
         let p_b = other.power as u8;
         match p_a.cmp(&p_b) {
             Ordering::Equal => Some(self.tie_pow.cmp(&other.tie_pow)),
-            o @ _ => Some(o),
+            o => Some(o),
         }
     }
 }

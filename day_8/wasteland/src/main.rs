@@ -10,7 +10,7 @@ struct Wasteland {
 }
 
 impl Wasteland {
-    pub fn run(&self) -> usize {
+    pub fn _run(&self) -> usize {
         let mut curr = self.map.get("AAA").unwrap();
         for (i, instr) in self.instructions.chars().cycle().enumerate() {
             match instr {
@@ -41,13 +41,13 @@ impl Wasteland {
                 for (i, instr) in self.instructions.chars().cycle().enumerate() {
                     match instr {
                         'R' => {
-                            if curr.1.ends_with("Z") {
+                            if curr.1.ends_with('Z') {
                                 return i + 1;
                             }
                             curr = self.map.get(&curr.1).unwrap();
                         }
                         'L' => {
-                            if curr.0.ends_with("Z") {
+                            if curr.0.ends_with('Z') {
                                 return i + 1;
                             }
                             curr = self.map.get(&curr.0).unwrap();

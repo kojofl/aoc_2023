@@ -10,7 +10,7 @@ fn main() {
         let Some((hand, bid)) = line.split_once(' ') else {
             continue;
         };
-        let hand: Vec<Card> = hand.chars().take(5).map(|b| Card::from(b)).collect();
+        let hand: Vec<Card> = hand.chars().take(5).map(Card::from).collect();
         let bid = bid.parse::<u64>().unwrap();
         hands.push(Hand::new(&hand[..5].try_into().unwrap(), bid));
     }
