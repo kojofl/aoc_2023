@@ -13,7 +13,7 @@ enum SearchResult {
     Failure {
         next_index: usize,
     },
-    EOL,
+    Eol,
 }
 
 /// The GearMap tracks all gears.
@@ -91,7 +91,7 @@ fn main() {
                 } => {
                     j = last_index;
                 }
-                SearchResult::EOL => break,
+                SearchResult::Eol => break,
             }
         }
     }
@@ -122,7 +122,7 @@ enum Direction {
 fn search_number(data: &[Vec<u8>], i: usize, j: usize) -> SearchResult {
     use Direction::*;
     let Some(start_number) = data[i][j..].iter().position(|e| e.is_ascii_digit()).map(|i| i + j) else {
-        return SearchResult::EOL;
+        return SearchResult::Eol;
     };
     let end_number = data[i][start_number..]
         .iter()
@@ -139,7 +139,7 @@ fn search_number(data: &[Vec<u8>], i: usize, j: usize) -> SearchResult {
                 }
                 match check_top(
                     &data[i - 1],
-                    (start_number).checked_sub(1).unwrap_or(0),
+                    (start_number).saturating_sub(1),
                     end_number + 1,
                 ) {
                     (true, Some(y)) => {
@@ -156,7 +156,7 @@ fn search_number(data: &[Vec<u8>], i: usize, j: usize) -> SearchResult {
                 }
                 match check_bot(
                     &data[i + 1],
-                    (start_number).checked_sub(1).unwrap_or(0),
+                    (start_number).saturating_sub(1),
                     end_number + 1,
                 ) {
                     (true, Some(y)) => {
@@ -261,5 +261,5 @@ fn check_position(line: &[u8], p: usize) -> (bool, Option<usize>) {
             return (true, None);
         }
     }
-    return (false, None);
+    (false, None)
 }
