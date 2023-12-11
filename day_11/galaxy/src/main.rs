@@ -22,7 +22,7 @@ impl Universe {
     fn calculate_distance_sum(&self) -> usize {
         let mut handles = Vec::new();
         for galaxie in self.galaxies.iter() {
-            let galaxie = galaxie.clone();
+            let galaxie = *galaxie;
             let weights = Arc::clone(&self.weights);
             let galaxies = Arc::clone(&self.galaxies);
             handles.push(std::thread::spawn(move || {
@@ -95,9 +95,9 @@ impl Universe {
         while let Some((i, j)) = queue.pop_front() {
             dist[i][j] = [
                 (i + 1, j),
-                (i.checked_sub(1).unwrap_or(0), j),
+                (i.saturating_sub(1), j),
                 (i, j + 1),
-                (i, j.checked_sub(1).unwrap_or(0)),
+                (i, j.saturating_sub(1)),
             ]
             .into_iter()
             .filter(|n| n.0 < rows && n.1 < cols)
@@ -114,9 +114,9 @@ impl Universe {
 
             [
                 (i + 1, j),
-                (i.checked_sub(1).unwrap_or(0), j),
+                (i.saturating_sub(1), j),
                 (i, j + 1),
-                (i, j.checked_sub(1).unwrap_or(0)),
+                (i, j.saturating_sub(1)),
             ]
             .into_iter()
             .filter(|n| n.0 < rows && n.1 < cols)
@@ -147,21 +147,17 @@ fn main() {
         .map(|(i, b)| {
             let mut empty = true;
             for (j, byte) in b.iter().enumerate() {
-                match byte {
-                    b'#' => {
-                        cols[j] += 1;
-                        galaxies.push((i, j));
-                        empty = false;
-                    }
-                    _ => {}
+                if *byte == b'#' {
+                    cols[j] += 1;
+                    galaxies.push((i, j));
+                    empty = false;
                 }
             }
-            let weight = if empty {
+            if empty {
                 vec![(1, 1000000); b.len()]
             } else {
                 vec![(1, 1); b.len()]
-            };
-            weight
+            }
         })
         .collect::<Vec<Vec<(usize, usize)>>>();
     for row in weights.iter_mut() {
