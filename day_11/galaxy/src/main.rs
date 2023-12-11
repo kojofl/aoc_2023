@@ -34,6 +34,17 @@ impl Universe {
         }) / 2
     }
 
+    fn calculate_distance_sum_single_thread(&self) -> usize {
+        let mut res = Vec::new();
+        for galaxie in self.galaxies.iter() {
+            let galaxie = *galaxie;
+            let weights = Arc::clone(&self.weights);
+            let galaxies = Arc::clone(&self.galaxies);
+            res.append(&mut Universe::calc_dist(galaxie, weights, galaxies));
+        }
+        res.iter().sum::<usize>() / 2
+    }
+
     fn start_state(
         start_row: usize,
         start_col: usize,
