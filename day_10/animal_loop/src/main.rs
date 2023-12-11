@@ -25,10 +25,7 @@ fn main() {
     let r = b_map
         .iter()
         .flatten()
-        .filter(|e| match e {
-            Field::Inside => true,
-            _ => false,
-        })
+        .filter(|e| matches!(e, Field::Inside))
         .count();
     println!("{r}");
 }
@@ -40,33 +37,32 @@ fn ray_test(b_map: &mut [Vec<Field>]) {
                 Field::Inside => {
                     let mut inter = 0;
                     let mut dir: Option<Direction> = None;
-                    for p in r[..j].iter().filter(|e| match e {
-                        Field::Pipe(_) => true,
-                        _ => false,
-                    }) {
+                    for p in r[..j].iter().filter(|e| matches!(e, Field::Pipe(_))) {
                         if let Field::Pipe(b) = p {
                             match b {
                                 b'|' => inter += 1,
                                 b'L' | b'J' => match dir {
-                                    Some(d) => match d {
-                                        Direction::Bottom => {
+                                    Some(d) => {
+                                        if let Direction::Bottom = d {
                                             inter += 1;
                                             dir = None;
+                                        } else {
+                                            dir = None;
                                         }
-                                        _ => dir = None,
-                                    },
+                                    }
                                     None => {
                                         dir = Some(Direction::Top);
                                     }
                                 },
                                 b'7' | b'F' => match dir {
-                                    Some(d) => match d {
-                                        Direction::Top => {
+                                    Some(d) => {
+                                        if let Direction::Top = d {
                                             inter += 1;
                                             dir = None;
+                                        } else {
+                                            dir = None;
                                         }
-                                        _ => dir = None,
-                                    },
+                                    }
                                     None => dir = Some(Direction::Bottom),
                                 },
                                 _ => continue,
@@ -91,31 +87,26 @@ pub enum Field {
 }
 
 fn filter_non_contained(b_map: &mut [Vec<Field>]) {
-    while let Some(p) = b_map[0].iter().position(|e| match e {
-        Field::Inside => true,
-        _ => false,
-    }) {
+    while let Some(p) = b_map[0].iter().position(|e| matches!(e, Field::Inside)) {
         proliferate((0, p), b_map);
     }
-    while let Some(p) = b_map[b_map.len() - 1].iter().position(|e| match e {
-        Field::Inside => true,
-        _ => false,
-    }) {
+    while let Some(p) = b_map[b_map.len() - 1]
+        .iter()
+        .position(|e| matches!(e, Field::Inside))
+    {
         proliferate((b_map.len() - 1, p), b_map);
     }
-    while let Some(p) = b_map.iter().enumerate().find(|el| match el.1[0] {
-        Field::Inside => true,
-        _ => false,
-    }) {
+    while let Some(p) = b_map
+        .iter()
+        .enumerate()
+        .find(|el| matches!(el.1[0], Field::Inside))
+    {
         proliferate((p.0, 0), b_map);
     }
     while let Some(p) = b_map
         .iter()
         .enumerate()
-        .find(|el| match el.1[el.1.len() - 1] {
-            Field::Inside => true,
-            _ => false,
-        })
+        .find(|el| matches!(el.1[el.1.len() - 1], Field::Inside))
     {
         proliferate((p.0, b_map[0].len() - 1), b_map);
     }
@@ -125,32 +116,29 @@ fn proliferate(seed: (usize, usize), b_map: &mut [Vec<Field>]) {
     let mut todo = VecDeque::new();
     todo.push_back(seed);
     while let Some((i, j)) = todo.pop_front() {
-        match b_map[i][j] {
-            Field::Inside => b_map[i][j] = Field::Outside,
-            _ => continue,
+        if let Field::Inside = b_map[i][j] {
+            b_map[i][j] = Field::Outside;
+        } else {
+            continue;
         }
         if i > 0 {
-            match b_map[i - 1][j] {
-                Field::Inside => todo.push_back((i - 1, j)),
-                _ => {}
+            if let Field::Inside = b_map[i - 1][j] {
+                todo.push_back((i - 1, j));
             }
         }
         if j > 0 {
-            match b_map[i][j - 1] {
-                Field::Inside => todo.push_back((i, j - 1)),
-                _ => {}
+            if let Field::Inside = b_map[i][j - 1] {
+                todo.push_back((i, j - 1));
             }
         }
         if i < b_map.len() - 1 {
-            match b_map[i + 1][j] {
-                Field::Inside => todo.push_back((i + 1, j)),
-                _ => {}
+            if let Field::Inside = b_map[i + 1][j] {
+                todo.push_back((i + 1, j));
             }
         }
         if j < b_map[0].len() - 1 {
-            match b_map[i][j + 1] {
-                Field::Inside => todo.push_back((i, j + 1)),
-                _ => {}
+            if let Field::Inside = b_map[i][j + 1] {
+                todo.push_back((i, j + 1));
             }
         }
     }
@@ -166,7 +154,7 @@ enum Direction {
 
 fn run_maze(mut pos: (usize, usize), map: &mut [Vec<u8>], hist: &mut Vec<(usize, usize)>) -> u32 {
     let mut iteration = 1;
-    let start = calc_start(&mut pos, &map);
+    let start = calc_start(&mut pos, map);
     let mut dir = start[0];
     let (mut i, mut j) = (pos.0, pos.1);
     hist.push((i, j));
