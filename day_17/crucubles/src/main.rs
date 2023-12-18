@@ -65,7 +65,7 @@ fn run_maze(map: &[Vec<usize>], min: u8, max: u8) -> Option<Field> {
     while let Some(field) = priority.pop() {
         let i = field.position.0;
         let j = field.position.1;
-        if i == height - 1 && j == width - 1 {
+        if i == height - 1 && j == width - 1 && field.dir.1 >= min {
             return Some(field);
         }
         if visited[i][j].contains(&field.dir) {
