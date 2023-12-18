@@ -18,7 +18,7 @@ impl From<String> for Instruction {
         let color = split
             .next()
             .unwrap()
-            .strip_prefix('(')
+            .strip_prefix("(#")
             .map(|s| s.strip_suffix(')').unwrap())
             .unwrap()
             .to_owned();
@@ -27,6 +27,23 @@ impl From<String> for Instruction {
             amount,
             color,
         }
+    }
+}
+
+fn from_hex(s: String) -> Instruction {
+    let (n, d) = s.split_at(5);
+    let amount = u32::from_str_radix(n, 16).unwrap();
+    let d = match d {
+        "0" => Direction::Right,
+        "1" => Direction::Down,
+        "2" => Direction::Left,
+        "3" => Direction::Up,
+        _ => panic!("unknown encoded direction"),
+    };
+    Instruction {
+        instr: d,
+        amount,
+        color: s,
     }
 }
 
@@ -52,10 +69,17 @@ impl From<u8> for Direction {
 
 fn main() {
     let f = std::fs::File::open("input").unwrap();
-    let instructions: Vec<Instruction> = BufReader::new(f)
+    let mut instructions: Vec<Instruction> = BufReader::new(f)
         .lines()
         .map(|s| s.unwrap().into())
         .collect();
+    let borders = dig(&instructions);
+    let r = calc_ground_from_border(&borders);
+    println!("{r}");
+    // Part 2
+    instructions.iter_mut().for_each(|i| {
+        *i = from_hex(i.color.clone());
+    });
     let borders = dig(&instructions);
     let r = calc_ground_from_border(&borders);
     println!("{r}");
@@ -188,9 +212,14 @@ fn dig(instructions: &[Instruction]) -> VecDeque<Vec<(Tile, usize)>> {
         match i.instr {
             Direction::Up => {
                 match prev_dir {
-                    Direction::Right | Direction::Left => {
-                        borders[y].last_mut().unwrap().0 = Tile::CornerUp
-                    }
+                    Direction::Right | Direction::Left => match borders[y].last_mut() {
+                        Some(v) => {
+                            v.0 = Tile::CornerUp;
+                        }
+                        None => {
+                            borders[y].push((Tile::CornerUp, x));
+                        }
+                    },
                     _ => {}
                 }
                 for _ in 0..i.amount {
@@ -213,10 +242,7 @@ fn dig(instructions: &[Instruction]) -> VecDeque<Vec<(Tile, usize)>> {
                     }
                     _ => {}
                 }
-                for _ in 0..i.amount {
-                    x += 1;
-                    borders[y].push((Tile::Horizontal, x));
-                }
+                x += i.amount as i64;
             }
             Direction::Down => {
                 match prev_dir {
@@ -244,10 +270,7 @@ fn dig(instructions: &[Instruction]) -> VecDeque<Vec<(Tile, usize)>> {
                     }
                     _ => {}
                 }
-                for _ in 0..i.amount {
-                    x -= 1;
-                    borders[y].push((Tile::Horizontal, x));
-                }
+                x -= i.amount as i64;
             }
         }
         prev_dir = &i.instr;
