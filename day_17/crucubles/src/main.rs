@@ -13,7 +13,9 @@ fn main() {
                 .collect()
         })
         .collect();
-    let r = run_maze(map);
+    let r = run_maze(&map, 1, 3);
+    println!("{:?}", r);
+    let r = run_maze(&map, 4, 10);
     println!("{:?}", r);
 }
 
@@ -52,7 +54,7 @@ impl Default for Direction {
     }
 }
 
-fn run_maze(map: Vec<Vec<usize>>) -> Option<Field> {
+fn run_maze(map: &[Vec<usize>], min: u8, max: u8) -> Option<Field> {
     let height = map.len();
     let width = map[0].len();
     let mut visited = vec![vec![Vec::new(); width]; height];
@@ -72,27 +74,29 @@ fn run_maze(map: Vec<Vec<usize>>) -> Option<Field> {
         visited[i][j].push(field.dir);
         match field.dir {
             (Direction::Down | Direction::Top, x) => {
-                let r = (i, j + 1);
-                let l = (i, j.wrapping_sub(1));
-                if r.1 < width {
-                    if !visited[r.0][r.1].contains(&(Direction::Right, 1)) {
-                        priority.push(Field::new(
-                            r,
-                            (Direction::Right, 1),
-                            field.heat + map[r.0][r.1],
-                        ));
+                if x >= min {
+                    let r = (i, j + 1);
+                    let l = (i, j.wrapping_sub(1));
+                    if r.1 < width {
+                        if !visited[r.0][r.1].contains(&(Direction::Right, 1)) {
+                            priority.push(Field::new(
+                                r,
+                                (Direction::Right, 1),
+                                field.heat + map[r.0][r.1],
+                            ));
+                        }
+                    }
+                    if l.1 < width {
+                        if !visited[l.0][l.1].contains(&(Direction::Left, 1)) {
+                            priority.push(Field::new(
+                                l,
+                                (Direction::Left, 1),
+                                field.heat + map[l.0][l.1],
+                            ));
+                        }
                     }
                 }
-                if l.1 < width {
-                    if !visited[l.0][l.1].contains(&(Direction::Left, 1)) {
-                        priority.push(Field::new(
-                            l,
-                            (Direction::Left, 1),
-                            field.heat + map[l.0][l.1],
-                        ));
-                    }
-                }
-                if x != 3 {
+                if x < max {
                     let d = if field.dir.0 == Direction::Down {
                         (i + 1, j)
                     } else {
@@ -110,27 +114,29 @@ fn run_maze(map: Vec<Vec<usize>>) -> Option<Field> {
                 }
             }
             (Direction::Left | Direction::Right, x) => {
-                let d = (i + 1, j);
-                let t = (i.wrapping_sub(1), j);
-                if d.0 < height {
-                    if !visited[d.0][d.1].contains(&(Direction::Down, 1)) {
-                        priority.push(Field::new(
-                            d,
-                            (Direction::Down, 1),
-                            field.heat + map[d.0][d.1],
-                        ));
+                if x >= min {
+                    let d = (i + 1, j);
+                    let t = (i.wrapping_sub(1), j);
+                    if d.0 < height {
+                        if !visited[d.0][d.1].contains(&(Direction::Down, 1)) {
+                            priority.push(Field::new(
+                                d,
+                                (Direction::Down, 1),
+                                field.heat + map[d.0][d.1],
+                            ));
+                        }
+                    }
+                    if t.0 < height {
+                        if !visited[t.0][t.1].contains(&(Direction::Top, 1)) {
+                            priority.push(Field::new(
+                                t,
+                                (Direction::Top, 1),
+                                field.heat + map[t.0][t.1],
+                            ));
+                        }
                     }
                 }
-                if t.0 < height {
-                    if !visited[t.0][t.1].contains(&(Direction::Top, 1)) {
-                        priority.push(Field::new(
-                            t,
-                            (Direction::Top, 1),
-                            field.heat + map[t.0][t.1],
-                        ));
-                    }
-                }
-                if x != 3 {
+                if x < max {
                     let l = if field.dir.0 == Direction::Left {
                         (i, j.wrapping_sub(1))
                     } else {
