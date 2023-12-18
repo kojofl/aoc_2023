@@ -145,6 +145,19 @@ impl Cave {
         println!("{r}")
     }
 
+    fn start_rays_single(self: Arc<Self>) {
+        let mut max = 0;
+        for w in 0..self.width {
+            max = max.max(self.calc_ray_energy(Direction::Down, (0, w)));
+            max = max.max(self.calc_ray_energy(Direction::Top, (self.height - 1, w)));
+        }
+        for h in 0..self.height {
+            max = max.max(self.calc_ray_energy(Direction::Right, (h, 0)));
+            max = max.max(self.calc_ray_energy(Direction::Left, (h, self.width - 1)));
+        }
+        println!("{max}")
+    }
+
     fn calc_ray_energy(&self, direction: Direction, position: Position) -> u64 {
         let mut path: Vec<Vec<Vec<Direction>>> = vec![vec![Vec::new(); self.width]; self.height];
         let mut priority = VecDeque::new();
@@ -182,5 +195,5 @@ fn main() {
     let cave = Cave::new(cave);
     cave.start_ray();
     let cave = Arc::new(cave);
-    cave.start_rays();
+    cave.start_rays_single();
 }
