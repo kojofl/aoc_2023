@@ -88,12 +88,7 @@ fn main() {
 fn calc_ground_from_border(border: &VecDeque<Vec<(Tile, usize)>>) -> usize {
     let mut ground_tiles = 0;
     for row in border {
-        let fileter_row: Vec<(Tile, usize)> = row
-            .iter()
-            .copied()
-            .filter(|(t, _)| *t != Tile::Horizontal)
-            .collect();
-        for (i, border) in fileter_row.iter().enumerate() {
+        for (i, border) in row.iter().enumerate() {
             if i == 0 {
                 ground_tiles += 1;
                 continue;
@@ -102,7 +97,7 @@ fn calc_ground_from_border(border: &VecDeque<Vec<(Tile, usize)>>) -> usize {
                 Tile::Vertical => {
                     let mut inter = 0;
                     let mut dir: Option<Tile> = None;
-                    for p in fileter_row[..i].iter() {
+                    for p in row[..i].iter() {
                         match p.0 {
                             Tile::Vertical => {
                                 inter += 1;
@@ -129,20 +124,19 @@ fn calc_ground_from_border(border: &VecDeque<Vec<(Tile, usize)>>) -> usize {
                                     dir = Some(p.0);
                                 }
                             },
-                            _ => {}
                         }
                     }
                     if inter % 2 == 0 {
                         ground_tiles += 1;
                     } else {
-                        ground_tiles += (fileter_row[i - 1].1..fileter_row[i].1).count();
+                        ground_tiles += (row[i - 1].1..row[i].1).count();
                     }
                 }
                 Tile::CornerDown | Tile::CornerUp => {
                     let mut corners = 0;
                     let mut inter = 0;
                     let mut dir: Option<Tile> = None;
-                    for p in fileter_row[..i].iter() {
+                    for p in row[..i].iter() {
                         match p.0 {
                             Tile::Vertical => {
                                 inter += 1;
@@ -175,18 +169,16 @@ fn calc_ground_from_border(border: &VecDeque<Vec<(Tile, usize)>>) -> usize {
                                     }
                                 }
                             }
-                            _ => {}
                         }
                     }
                     if corners % 2 != 0 {
-                        ground_tiles += (fileter_row[i - 1].1..fileter_row[i].1).count();
+                        ground_tiles += (row[i - 1].1..row[i].1).count();
                     } else if inter % 2 == 0 {
                         ground_tiles += 1;
                     } else {
-                        ground_tiles += (fileter_row[i - 1].1..fileter_row[i].1).count();
+                        ground_tiles += (row[i - 1].1..row[i].1).count();
                     }
                 }
-                _ => {}
             }
         }
     }
@@ -196,7 +188,6 @@ fn calc_ground_from_border(border: &VecDeque<Vec<(Tile, usize)>>) -> usize {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Tile {
     Vertical,
-    Horizontal,
     CornerDown,
     CornerUp,
 }
@@ -252,7 +243,7 @@ fn dig(instructions: &[Instruction]) -> VecDeque<Vec<(Tile, usize)>> {
                     _ => {}
                 }
                 for _ in 0..i.amount {
-                    y = y + 1;
+                    y += 1;
                     if y >= borders.len() {
                         borders.push_back(vec![(Tile::Vertical, x)]);
                     } else {
