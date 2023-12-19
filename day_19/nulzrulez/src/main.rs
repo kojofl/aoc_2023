@@ -28,4 +28,10 @@ fn main() {
         r += accepted.sum_val();
     }
     println!("{r}");
+
+    let r_2 = nulz_rulez
+        .range_discovery()
+        .into_iter()
+        .fold(0, |acc, r| acc + r.prod_val());
+    println!("{r_2}");
 }

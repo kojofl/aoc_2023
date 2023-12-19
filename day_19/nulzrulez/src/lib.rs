@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, Clone)]
 pub struct RulezNulz {
@@ -43,6 +43,37 @@ impl RulezNulz {
                 RuleResult::Reject => return false,
             }
         }
+    }
+
+    pub fn range_discovery(&self) -> Vec<RangePart> {
+        let mut r = Vec::new();
+        let start = RangePart::new();
+        let mut queue = VecDeque::new();
+        queue.push_back((start, RuleResult::Next(self.init)));
+        while let Some((mut range, command)) = queue.pop_front() {
+            match command {
+                RuleResult::Next(n) => {
+                    let rule_container = self.buffer[n].as_ref().unwrap();
+                    for rule in &rule_container.rules {
+                        match rule.match_range_part(range) {
+                            RangeRuleResult::Finish(r) => {
+                                queue.push_back(r);
+                                continue;
+                            }
+                            RangeRuleResult::Split((f, c)) => {
+                                queue.push_back(f);
+                                range = c;
+                            }
+                            RangeRuleResult::NoMatch(_) => {}
+                        }
+                    }
+                    queue.push_back((range, rule_container.finaly))
+                }
+                RuleResult::Accept => r.push(range),
+                RuleResult::Reject => {}
+            }
+        }
+        r
     }
 
     pub fn hash(key: &str) -> usize {
@@ -94,6 +125,50 @@ impl From<&str> for RuleContainer {
             }
         }
         panic!("Needs a final instruction")
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct RangePart {
+    x: (u32, u32),
+    m: (u32, u32),
+    a: (u32, u32),
+    s: (u32, u32),
+}
+
+impl RangePart {
+    pub fn new() -> Self {
+        Self {
+            x: (1, 4000),
+            m: (1, 4000),
+            a: (1, 4000),
+            s: (1, 4000),
+        }
+    }
+
+    pub fn prod_val(&self) -> usize {
+        (self.s.0..=self.s.1).count()
+            * (self.a.0..=self.a.1).count()
+            * (self.m.0..=self.m.1).count()
+            * (self.x.0..=self.x.1).count()
+    }
+
+    fn set_part_value(&mut self, k: PartValue, v: (u32, u32)) {
+        match k {
+            PartValue::X => self.x = v,
+            PartValue::M => self.m = v,
+            PartValue::S => self.s = v,
+            PartValue::A => self.a = v,
+        }
+    }
+
+    fn get_part_value(&self, v: PartValue) -> (u32, u32) {
+        match v {
+            PartValue::X => self.x,
+            PartValue::M => self.m,
+            PartValue::S => self.s,
+            PartValue::A => self.a,
+        }
     }
 }
 
@@ -161,7 +236,50 @@ pub struct Rule {
     result: RuleResult,
 }
 
+#[derive(Debug, Clone, Copy)]
+enum RangeRuleResult {
+    Finish((RangePart, RuleResult)),
+    Split(((RangePart, RuleResult), RangePart)),
+    NoMatch(RangePart),
+}
+
 impl Rule {
+    // Possible matches are:
+    // - None
+    // - Splitting
+    // - Full
+    fn match_range_part(&self, p: RangePart) -> RangeRuleResult {
+        let (s, e) = p.get_part_value(self.val);
+        match self.op {
+            Operation::Greater => {
+                if (s..e).contains(&self.cmp) {
+                    let mut finished = p;
+                    let mut continued = p;
+                    finished.set_part_value(self.val, (self.cmp + 1, e));
+                    continued.set_part_value(self.val, (s, self.cmp));
+                    RangeRuleResult::Split(((finished, self.result), continued))
+                } else if self.cmp < s {
+                    RangeRuleResult::Finish((p, self.result))
+                } else {
+                    RangeRuleResult::NoMatch(p)
+                }
+            }
+            Operation::Smaller => {
+                if (s + 1..=e).contains(&self.cmp) {
+                    let mut finished = p;
+                    let mut continued = p;
+                    finished.set_part_value(self.val, (s, self.cmp - 1));
+                    continued.set_part_value(self.val, (self.cmp, e));
+                    RangeRuleResult::Split(((finished, self.result), continued))
+                } else if self.cmp > e {
+                    RangeRuleResult::Finish((p, self.result))
+                } else {
+                    RangeRuleResult::NoMatch(p)
+                }
+            }
+        }
+    }
+
     fn matches(&self, p: Part) -> Option<RuleResult> {
         let v = p.get_part_value(self.val);
         match self.op {
@@ -243,6 +361,14 @@ enum RuleResult {
 pub enum Operation {
     Greater,
     Smaller,
+}
+
+#[test]
+fn test_set_range_val() {
+    let mut range = RangePart::new();
+    println!("{:?}", range);
+    range.set_part_value(PartValue::X, (1, 2));
+    println!("{:?}", range);
 }
 
 #[test]
