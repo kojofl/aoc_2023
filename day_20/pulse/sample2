@@ -1,0 +1,6 @@
+broadcaster -> a
+%a -> in, co
+&in -> b
+%b -> co
+&co -> xo
+&xo -> 
