@@ -24,8 +24,8 @@ impl Machine {
         for module_idx in inhabited.iter().copied() {
             let module = modules[module_idx].as_ref().unwrap();
             let next = match module {
-                Module::FlipFlop { state, next } => next,
-                Module::Conjunction { state, next } => next,
+                Module::FlipFlop { state: _, next } => next,
+                Module::Conjunction { state: _, next } => next,
             }
             .clone();
             for n in next
@@ -33,7 +33,7 @@ impl Machine {
                 .copied()
                 .filter(|idx| conjunction_idx.contains(idx))
             {
-                let Some(Module::Conjunction { state, next }) = modules[n].as_mut() else {
+                let Some(Module::Conjunction { state, next: _ }) = modules[n].as_mut() else {
                     unreachable!()
                 };
                 state.insert(module_idx, Pulse::Low);
@@ -84,10 +84,6 @@ impl Machine {
             }
             while let Some(c_m) = priority.pop_front() {
                 if self.modules[c_m.1].is_none() {
-                    if c_m.2 == Low {
-                        println!("ARSCH GEILE NUMMER");
-                        println!("{i}");
-                    }
                     continue;
                 }
                 match (
@@ -98,26 +94,26 @@ impl Machine {
                         *state = !*state;
                         if *state {
                             pulse_counter.0 += next.len();
-                            Self::send_pulse(c_m.1, High, &next, &mut priority);
+                            Self::send_pulse(c_m.1, High, next, &mut priority);
                         } else {
                             pulse_counter.1 += next.len();
-                            Self::send_pulse(c_m.1, Low, &next, &mut priority);
+                            Self::send_pulse(c_m.1, Low, next, &mut priority);
                         }
                     }
                     (Module::Conjunction { state, next }, Pulse::High) => {
                         state.insert(c_m.0.unwrap(), High);
                         if state.iter().all(|p| *p.1 == High) {
                             pulse_counter.1 += next.len();
-                            Self::send_pulse(c_m.1, Low, &next, &mut priority);
+                            Self::send_pulse(c_m.1, Low, next, &mut priority);
                         } else {
                             pulse_counter.0 += next.len();
-                            Self::send_pulse(c_m.1, High, &next, &mut priority);
+                            Self::send_pulse(c_m.1, High, next, &mut priority);
                         }
                     }
                     (Module::Conjunction { state, next }, Pulse::Low) => {
                         state.insert(c_m.0.unwrap(), Low);
                         pulse_counter.0 += next.len();
-                        Self::send_pulse(c_m.1, High, &next, &mut priority);
+                        Self::send_pulse(c_m.1, High, next, &mut priority);
                     }
                     _ => {}
                 }
@@ -165,23 +161,23 @@ impl Machine {
                             *state = !*state;
                             if *state {
                                 pulse_counter.0 += next.len();
-                                Self::send_pulse(c_m.1, High, &next, &mut priority);
+                                Self::send_pulse(c_m.1, High, next, &mut priority);
                             } else {
                                 pulse_counter.1 += next.len();
-                                Self::send_pulse(c_m.1, Low, &next, &mut priority);
+                                Self::send_pulse(c_m.1, Low, next, &mut priority);
                             }
                         }
                         (Module::Conjunction { state, next }, Pulse::High) => {
                             state.insert(c_m.0.unwrap(), High);
                             if state.iter().all(|p| *p.1 == High) {
                                 pulse_counter.1 += next.len();
-                                Self::send_pulse(c_m.1, Low, &next, &mut priority);
+                                Self::send_pulse(c_m.1, Low, next, &mut priority);
                             }
                         }
                         (Module::Conjunction { state, next }, Pulse::Low) => {
                             state.insert(c_m.0.unwrap(), Low);
                             pulse_counter.0 += next.len();
-                            Self::send_pulse(c_m.1, High, &next, &mut priority);
+                            Self::send_pulse(c_m.1, High, next, &mut priority);
                         }
                         _ => {}
                     }
@@ -207,7 +203,6 @@ impl Machine {
                 Module::Conjunction { state: _, next } => next.contains(&goal),
             })
             .collect();
-        println!("{relevant:?}");
         let mut relevant_map: HashMap<usize, usize> = HashMap::new();
 
         for i in 1.. {
@@ -227,9 +222,8 @@ impl Machine {
                                 let v = v.ok_or("not ready yet")?;
                                 Ok(acc * v / gcd(acc, *v))
                             });
-                        if r.is_ok() {
-                            println!("{:?}", relevant_map);
-                            println!("{}", r.unwrap());
+                        if let Ok(result) = r {
+                            println!("{}", result);
                             return;
                         }
                     }
@@ -244,22 +238,22 @@ impl Machine {
                     (Module::FlipFlop { state, next }, Pulse::Low) => {
                         *state = !*state;
                         if *state {
-                            Self::send_pulse(c_m.1, High, &next, &mut priority);
+                            Self::send_pulse(c_m.1, High, next, &mut priority);
                         } else {
-                            Self::send_pulse(c_m.1, Low, &next, &mut priority);
+                            Self::send_pulse(c_m.1, Low, next, &mut priority);
                         }
                     }
                     (Module::Conjunction { state, next }, Pulse::High) => {
                         state.insert(c_m.0.unwrap(), High);
                         if state.iter().all(|p| *p.1 == High) {
-                            Self::send_pulse(c_m.1, Low, &next, &mut priority);
+                            Self::send_pulse(c_m.1, Low, next, &mut priority);
                         } else {
-                            Self::send_pulse(c_m.1, High, &next, &mut priority);
+                            Self::send_pulse(c_m.1, High, next, &mut priority);
                         }
                     }
                     (Module::Conjunction { state, next }, Pulse::Low) => {
                         state.insert(c_m.0.unwrap(), Low);
-                        Self::send_pulse(c_m.1, High, &next, &mut priority);
+                        Self::send_pulse(c_m.1, High, next, &mut priority);
                     }
                     _ => {}
                 }
@@ -368,7 +362,7 @@ fn main() {
             }
             '%' => {
                 let idx = hash(&src[1..=2]);
-                let next: Vec<usize> = dest.split(", ").map(|s| hash(s)).collect();
+                let next: Vec<usize> = dest.split(", ").map(hash).collect();
                 inhabited.push(idx);
                 modules[idx] = Some(Module::FlipFlop { state: false, next });
             }
@@ -377,7 +371,7 @@ fn main() {
                 let next: Vec<usize> = dest
                     .split(", ")
                     .filter(|s| !s.trim().is_empty())
-                    .map(|s| hash(s))
+                    .map(hash)
                     .collect();
                 inhabited.push(idx);
                 modules[idx] = Some(Module::Conjunction {
@@ -409,5 +403,5 @@ fn test_hash() {
     let b_hash = hash(b);
     let c_hash = hash(c);
     let d_hash = hash(d);
-    println!("{a_hash} - {b_hash}");
+    println!("{a_hash} - {b_hash} - {c_hash} - {d_hash}");
 }
