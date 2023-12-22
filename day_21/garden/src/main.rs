@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashSet, VecDeque},
+    collections::VecDeque,
     io::{BufRead, BufReader},
 };
 
@@ -34,7 +34,7 @@ fn main() {
                 .collect(),
         );
     }
-    let r = run_maze_nulz(field, start, 5000);
+    let r = run_maze_nulz(field, start, 10);
     println!("{r}")
 }
 
@@ -44,34 +44,135 @@ pub fn run_maze_nulz(
     step_limit: usize,
 ) -> usize {
     let mut priority = VecDeque::new();
-    let rows = maze.len() as i64;
-    let cols = maze[0].len() as i64;
-    let mut counting = HashSet::new();
-    let mut dont_need = HashSet::new();
-    priority.push_back(((start.0 as i64, start.1 as i64), 0));
+    let rows = maze.len();
+    let cols = maze[0].len();
+    let mut counting = vec![vec![usize::MAX; cols]; rows];
+    priority.push_back(((start.0, start.1), 0));
+    counting[start.0][start.1] = 0;
+    let is_even = step_limit % 2 == 0;
     while let Some(((i, j), s)) = priority.pop_front() {
-        if counting.get(&(i, j)).is_some() || dont_need.get(&(i, j)).is_some() {
-            continue;
-        }
-        if s % 2 == 0 {
-            counting.insert((i, j));
-        } else {
-            dont_need.insert((i, j));
-        }
         if s == step_limit {
             continue;
         }
-        [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
-            .into_iter()
-            .for_each(|n| {
-                if !counting.get(&n).is_some()
-                    && !dont_need.get(&n).is_some()
-                    && maze[(n.0.rem_euclid(rows)) as usize][(n.1.rem_euclid(cols)) as usize]
-                        == GardenTile::Plot
-                {
-                    priority.push_back((n, s + 1));
-                }
-            });
+        [
+            (i + 1, j),
+            (i.wrapping_sub(1), j),
+            (i, j + 1),
+            (i, j.wrapping_sub(1)),
+        ]
+        .into_iter()
+        .filter(|e| e.0 < rows && e.1 < cols)
+        .for_each(|n| {
+            if counting[n.0][n.1] == usize::MAX && maze[n.0][n.1] == GardenTile::Plot {
+                counting[n.0][n.1] = s + 1;
+                priority.push_back((n, s + 1));
+            }
+        });
     }
-    counting.iter().count()
+    let half = cols / 2;
+    // Number of maps to consider
+    let n = (step_limit.saturating_sub(half)) / cols;
+    let stops_in_middle = (cols - 1) % step_limit == 0;
+    // The number of odd / even maps in n
+    let (odds, evens) = if n % 2 == 0 {
+        let odds = match is_even {
+            true => n.pow(2),
+            false => (n + 1).pow(2),
+        };
+        let evens = match is_even {
+            true => (n + 1).pow(2),
+            false => (n).pow(2),
+        };
+        (odds, evens)
+    } else {
+        let odds = match is_even {
+            true => (n + 1).pow(2),
+            false => n.pow(2),
+        };
+        let evens = match is_even {
+            true => (n + 1).pow(2),
+            false => n.pow(2),
+        };
+        (odds, evens)
+    };
+    // Sum of all odd tiles in odd maps in n
+    let o = odds
+        * counting
+            .iter()
+            .flatten()
+            .copied()
+            .filter(|s| *s != usize::MAX && s % 2 != 0)
+            .count();
+    // Sum of all even tiles in even maps in n
+    let e = evens
+        * counting
+            .iter()
+            .flatten()
+            .copied()
+            .filter(|s| *s != usize::MAX && s % 2 == 0)
+            .count();
+    let steps_last = step_limit % cols;
+    let outside;
+    let inside;
+    if !stops_in_middle {
+        // Since we cannot reach all tiles in the outermost maps we need to subtract them
+        outside = if is_even {
+            (n + 1)
+                * counting
+                    .iter()
+                    .flatten()
+                    .copied()
+                    .filter(|s| *s != usize::MAX && s % 2 == 0 && *s > steps_last)
+                    .count()
+        } else {
+            (n + 1)
+                * counting
+                    .iter()
+                    .flatten()
+                    .copied()
+                    .filter(|s| *s != usize::MAX && s % 2 != 0 && *s > steps_last)
+                    .count()
+        };
+        // Since we do not consider some maps we need to consider their respective elements we can
+        // reach
+        inside = if is_even {
+            n * counting
+                .iter()
+                .flatten()
+                .copied()
+                .filter(|s| *s != usize::MAX && s % 2 != 0 && *s > steps_last)
+                .count()
+        } else {
+            n * counting
+                .iter()
+                .flatten()
+                .copied()
+                .filter(|s| *s != usize::MAX && s % 2 == 0 && *s > steps_last)
+                .count()
+        };
+    } else {
+        // TODO: If we do not walk to the end of the map we need a different calculation of inside,
+        // outside is 0. 
+        // For now this solution cannot solve the example input > 6 since they all stop in the
+        // middle.
+        outside = 0;
+        inside = if is_even {
+            (n + 1)
+                * counting
+                    .iter()
+                    .flatten()
+                    .copied()
+                    .filter(|s| *s != usize::MAX && s % 2 != 0)
+                    .count()
+        } else {
+            (n + 1)
+                * counting
+                    .iter()
+                    .flatten()
+                    .copied()
+                    .filter(|s| *s != usize::MAX && s % 2 == 0)
+                    .count()
+        };
+    }
+    e + o - outside + inside
 }
