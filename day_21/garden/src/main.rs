@@ -10,7 +10,7 @@ pub enum GardenTile {
 }
 
 fn main() {
-    let f = std::fs::File::open("sample").unwrap();
+    let f = std::fs::File::open("input").unwrap();
     let reader = BufReader::new(f);
     let mut field: Vec<Vec<GardenTile>> = Vec::new();
     let mut start = (0, 0);
@@ -34,7 +34,7 @@ fn main() {
                 .collect(),
         );
     }
-    let r = run_maze_nulz(field, start, 10);
+    let r = run_maze_nulz(field, start, 26501365);
     println!("{r}")
 }
 
@@ -72,7 +72,6 @@ pub fn run_maze_nulz(
     let half = cols / 2;
     // Number of maps to consider
     let n = (step_limit.saturating_sub(half)) / cols;
-    let stops_in_middle = (cols - 1) % step_limit == 0;
     // The number of odd / even maps in n
     let (odds, evens) = if n % 2 == 0 {
         let odds = match is_even {
@@ -112,67 +111,40 @@ pub fn run_maze_nulz(
             .filter(|s| *s != usize::MAX && s % 2 == 0)
             .count();
     let steps_last = step_limit % cols;
-    let outside;
-    let inside;
-    if !stops_in_middle {
-        // Since we cannot reach all tiles in the outermost maps we need to subtract them
-        outside = if is_even {
-            (n + 1)
-                * counting
-                    .iter()
-                    .flatten()
-                    .copied()
-                    .filter(|s| *s != usize::MAX && s % 2 == 0 && *s > steps_last)
-                    .count()
-        } else {
-            (n + 1)
-                * counting
-                    .iter()
-                    .flatten()
-                    .copied()
-                    .filter(|s| *s != usize::MAX && s % 2 != 0 && *s > steps_last)
-                    .count()
-        };
-        // Since we do not consider some maps we need to consider their respective elements we can
-        // reach
-        inside = if is_even {
-            n * counting
-                .iter()
-                .flatten()
-                .copied()
-                .filter(|s| *s != usize::MAX && s % 2 != 0 && *s > steps_last)
-                .count()
-        } else {
-            n * counting
+    // Since we cannot reach all tiles in the outermost maps we need to subtract them
+    let outside = if is_even {
+        (n + 1)
+            * counting
                 .iter()
                 .flatten()
                 .copied()
                 .filter(|s| *s != usize::MAX && s % 2 == 0 && *s > steps_last)
                 .count()
-        };
     } else {
-        // TODO: If we do not walk to the end of the map we need a different calculation of inside,
-        // outside is 0. 
-        // For now this solution cannot solve the example input > 6 since they all stop in the
-        // middle.
-        outside = 0;
-        inside = if is_even {
-            (n + 1)
-                * counting
-                    .iter()
-                    .flatten()
-                    .copied()
-                    .filter(|s| *s != usize::MAX && s % 2 != 0)
-                    .count()
-        } else {
-            (n + 1)
-                * counting
-                    .iter()
-                    .flatten()
-                    .copied()
-                    .filter(|s| *s != usize::MAX && s % 2 == 0)
-                    .count()
-        };
-    }
+        (n + 1)
+            * counting
+                .iter()
+                .flatten()
+                .copied()
+                .filter(|s| *s != usize::MAX && s % 2 != 0 && *s > steps_last)
+                .count()
+    };
+    // Since we do not consider some maps we need to consider their respective elements we can
+    // reach
+    let inside = if is_even {
+        n * counting
+            .iter()
+            .flatten()
+            .copied()
+            .filter(|s| *s != usize::MAX && s % 2 != 0 && *s > steps_last)
+            .count()
+    } else {
+        n * counting
+            .iter()
+            .flatten()
+            .copied()
+            .filter(|s| *s != usize::MAX && s % 2 == 0 && *s > steps_last)
+            .count()
+    };
     e + o - outside + inside
 }
