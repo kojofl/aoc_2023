@@ -34,15 +34,13 @@ fn main() {
                 .collect(),
         );
     }
-    let r = run_maze_nulz(field, start, 26501365);
+    let r = run_maze_nulz(&field, start, 64);
+    println!("{r}");
+    let r = run_maze_nulz(&field, start, 26501365);
     println!("{r}")
 }
 
-pub fn run_maze_nulz(
-    maze: Vec<Vec<GardenTile>>,
-    start: (usize, usize),
-    step_limit: usize,
-) -> usize {
+pub fn run_maze_nulz(maze: &[Vec<GardenTile>], start: (usize, usize), step_limit: usize) -> usize {
     let mut priority = VecDeque::new();
     let rows = maze.len();
     let cols = maze[0].len();
@@ -73,25 +71,13 @@ pub fn run_maze_nulz(
     // Number of maps to consider
     let n = (step_limit.saturating_sub(half)) / cols;
     // The number of odd / even maps in n
-    let (odds, evens) = if n % 2 == 0 {
-        let odds = match is_even {
-            true => n.pow(2),
-            false => (n + 1).pow(2),
-        };
-        let evens = match is_even {
-            true => (n + 1).pow(2),
-            false => (n).pow(2),
-        };
+    let (odds, evens) = if (n % 2 == 0) == is_even {
+        let odds = n.pow(2);
+        let evens = (n + 1).pow(2);
         (odds, evens)
     } else {
-        let odds = match is_even {
-            true => (n + 1).pow(2),
-            false => n.pow(2),
-        };
-        let evens = match is_even {
-            true => (n + 1).pow(2),
-            false => n.pow(2),
-        };
+        let odds = (n + 1).pow(2);
+        let evens = n.pow(2);
         (odds, evens)
     };
     // Sum of all odd tiles in odd maps in n
