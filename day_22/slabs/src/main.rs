@@ -1,5 +1,6 @@
+use itertools::Itertools;
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet, VecDeque},
     io::{BufRead, BufReader},
 };
 
@@ -71,6 +72,79 @@ impl Cave {
                 })
                 .len()
     }
+
+    fn max_chain_reaction(&self) -> usize {
+        // The index of all stones that have an effect when removed.
+        let idx: Vec<usize> = self
+            .stones
+            .iter()
+            .fold(HashSet::new(), |mut acc: HashSet<usize>, stone| {
+                let x: HashSet<usize> = self.inner[stone.z.0 - 1][stone.y.0..=stone.y.1]
+                    .iter()
+                    .map(|z| z[stone.x.0..=stone.x.1].iter())
+                    .flatten()
+                    .filter(|c| **c != 0)
+                    .copied()
+                    .collect();
+                if x.len() == 1 {
+                    acc.extend(x.iter());
+                }
+                acc
+            })
+            .into_iter()
+            .collect();
+        let mut destruction: usize = 0;
+        for id in idx.into_iter().rev() {
+            let mut prio: VecDeque<usize> = VecDeque::new();
+            let mut power = HashSet::new();
+            let mut depend = 0;
+            power.insert(id);
+            power.insert(0);
+            let stone = self.stones[id - 1];
+            for above in self.inner[stone.z.1 + 1][stone.y.0..=stone.y.1]
+                .iter()
+                .map(|z| z[stone.x.0..=stone.x.1].iter())
+                .flatten()
+                .filter(|c| **c != 0)
+                .unique()
+            {
+                let candidate = self.stones[above - 1];
+                if self.inner[candidate.z.0 - 1][candidate.y.0..=candidate.y.1]
+                    .iter()
+                    .map(|z| z[candidate.x.0..=candidate.x.1].iter())
+                    .flatten()
+                    .all(|v| power.contains(&v))
+                {
+                    prio.push_back(*above);
+                }
+            }
+
+            while let Some(p) = prio.pop_front() {
+                let stone = self.stones[p - 1];
+                depend += 1;
+                power.insert(p);
+                for above in self.inner[stone.z.1 + 1][stone.y.0..=stone.y.1]
+                    .iter()
+                    .map(|z| z[stone.x.0..=stone.x.1].iter())
+                    .flatten()
+                    .filter(|c| **c != 0)
+                    .unique()
+                {
+                    let candidate = self.stones[above - 1];
+                    if self.inner[candidate.z.0 - 1][candidate.y.0..=candidate.y.1]
+                        .iter()
+                        .map(|z| z[candidate.x.0..=candidate.x.1].iter())
+                        .flatten()
+                        .all(|v| power.contains(&v))
+                    {
+                        prio.push_back(*above);
+                    }
+                }
+            }
+            destruction += depend;
+        }
+        destruction
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -135,5 +209,7 @@ fn main() {
     }
     let cave = Cave::new(max_x, max_y, max_z, stones);
     let r = cave.count_deletable_stones();
+    println!("{r}");
+    let r = cave.max_chain_reaction();
     println!("{r}");
 }
