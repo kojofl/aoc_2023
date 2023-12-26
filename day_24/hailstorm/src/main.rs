@@ -98,6 +98,7 @@ fn main() {
     let ctx = Context::new(&cfg);
     let solver = Solver::new(&ctx);
 
+    // Z3 logic from arthomnix's part2: https://github.com/arthomnix/aoc23/blob/master/src/days/day24.rs
     let [x, y, z, vx, vy, vz] = ["x", "y", "z", "vx", "vy", "vz"].map(|e| Int::new_const(&ctx, e));
 
     for hailstone in hailstones {
