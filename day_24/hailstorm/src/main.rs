@@ -66,7 +66,7 @@ impl From<&str> for DimensionContainter {
 }
 
 fn main() {
-    let file = std::fs::File::open("input").unwrap();
+    let file = std::fs::File::open("input.txt").unwrap();
     let reader = BufReader::new(file);
     let hailstones: Vec<Hailstone> = reader
         .lines()
