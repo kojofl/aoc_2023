@@ -1,6 +1,6 @@
 use std::io::{BufRead, BufReader};
-use z3::ast::{Array, Ast, Int};
-use z3::{Config, Context, Solver, Sort};
+use z3::ast::{Ast, Int};
+use z3::{Config, Context, Solver};
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Hailstone {
@@ -83,9 +83,8 @@ fn main() {
     let max = 400000000000000.0;
     for i in 0..hailstones.len() {
         let s = hailstones[i];
-        for j in i + 1..hailstones.len() {
-            let o = hailstones[j];
-            if let TwoDimIntersectionResult::Intersection { x, y } = s.intersection(&o) {
+        for o in hailstones.iter().skip(i + 1) {
+            if let TwoDimIntersectionResult::Intersection { x, y } = s.intersection(o) {
                 if (min..=max).contains(&x) && (min..=max).contains(&y) {
                     count += 1;
                 }
@@ -120,5 +119,5 @@ fn main() {
     let y = model.get_const_interp(&y).unwrap().as_i64().unwrap();
     let z = model.get_const_interp(&z).unwrap().as_i64().unwrap();
 
-    println!("{}", (x + y + z).to_string());
+    println!("{}", (x + y + z));
 }
